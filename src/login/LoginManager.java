@@ -18,33 +18,38 @@ public class LoginManager {
      * 2. Post login data from user together with cookie and security token to index.php
      */
 	
-	public static final String LOGIN_URL = "http://asgspez.de/";
+	public static final String LOGIN_URL = "http://asgspez.de/index.php/anmelden.html";
 	
-	private URL mLoginUrl;
+	private static final String LOGIN_FORM_ACTION = "/index.php/anmelden.html?task=user.login";
 	
-	private String mCookie;
-	private String mSecurityTokenReturn;
-	private String mSecurityTokenValue1;
+	private URL loginUrl;
+	
+	private String cookie;
+	private String securityTokenReturn;
+	private String securityTokenValue;
 
-	public void login() throws IOException{
-		mLoginUrl = new URL(LOGIN_URL);
+	public void login() throws IOException
+	{
+		loginUrl = new URL(LOGIN_URL);
 		
-		this.fetchCookeAndToken();
+		this.fetchCookieAndToken();
 	}
 
-	public void fetchCookeAndToken() throws IOException {
-		HttpURLConnection httpConn = (HttpURLConnection) mLoginUrl.openConnection();
+	public void fetchCookieAndToken() throws IOException 
+	{
+		HttpURLConnection httpConn = (HttpURLConnection) loginUrl.openConnection();
 		
 		try{
 			String cookieRaw = httpConn.getHeaderField("Set-Cookie");
-			mCookie = cookieRaw.split(Pattern.quote(";"))[0];
-			System.out.println(mCookie);
+			cookie = cookieRaw.split(Pattern.quote(";"))[0];
+			System.out.println(cookie);
 			
-			String seite = readHttpConnection(httpConn);
-			this.extractSecurityTokens(seite);
+			String site = readHttpConnection(httpConn);
+			this.extractSecurityTokens(site);
 			
-			System.out.println(mSecurityTokenReturn);
-			System.out.println(mSecurityTokenValue1);
+			System.out.println("Security token:");
+			System.out.println(securityTokenReturn);
+			System.out.println(securityTokenValue);
 		}
 		finally{
 			httpConn.disconnect();	
@@ -52,7 +57,8 @@ public class LoginManager {
 
 	}
 	
-	public static String readHttpConnection(HttpURLConnection conn) throws IOException{
+	public static String readHttpConnection(HttpURLConnection conn) throws IOException
+	{
 		String ret = "";
 		InputStream is = conn.getInputStream();
 		BufferedReader reader = null;
@@ -76,23 +82,20 @@ public class LoginManager {
 		return ret;
 	}
 	
-	private void extractSecurityTokens(String htmlPage){
+	private void extractSecurityTokens(String htmlPage)
+	{
 		Document doc = Parser.parse(htmlPage, LOGIN_URL);
 		Element body = doc.body();
-		Elements hiddenFields = body.getElementsByAttributeValue("type", "hidden");
-		for (Element currField : hiddenFields){
-			if (currField.hasAttr("name") && currField.hasAttr("value")){
-				
-				/*if (currField.attr("name") == "return")
-					mSecurityTokenReturn = currField.attr("value");
-				
-				if (currField.attr("value") == "1")
-					mSecurityTokenValue1 = currField.attr("name");*/
-				
-				System.out.println(currField.attr("name"));
-				System.out.println(currField.attr("value"));
-				System.out.println();
-			}
+		
+		Elements loginForm = body.getElementsByAttributeValue("action", LOGIN_FORM_ACTION);
+		Elements hiddenFields = loginForm.get(0).getElementsByAttributeValue("type", "hidden");
+		for (Element currNode:hiddenFields)
+		{
+			if (currNode.attr("name").equals("return"))
+				securityTokenReturn = currNode.attr("value");
+			if (currNode.attr("value").equals("1"))
+				securityTokenValue = currNode.attr("name");
 		}
+
 	}
 }
