@@ -19,11 +19,15 @@ public class LoginManager {
      * 2. Post login data from user together with cookie and security token to index.php
      */
 	
-	public static final String LOGIN_URL = "http://asgspez.de/index.php/anmelden.html";
-	
+	public static final String LOGIN_URL = "http://asgspez.de/index.php/anmelden.html?task=user.login";
+	private static final String LOGIN_TASK_URL = "http://asgspez.de/index.php/anmelden.html";
 	private static final String LOGIN_FORM_ACTION = "/index.php/anmelden.html?task=user.login";
 	
+	private static final String PLAN_URL = "http://asgspez.de/index.php/schueler-intern/vertretungsplan.html";
+	
 	private URL loginUrl;
+	private URL planUrl;
+	private URL loginTaskUrl;
 	
 	private String cookie;
 	private String securityTokenReturn;
@@ -32,6 +36,8 @@ public class LoginManager {
 	public void login() throws Exception
 	{
 		loginUrl = new URL(LOGIN_URL);
+		planUrl = new URL(PLAN_URL);
+		loginTaskUrl = new URL(LOGIN_TASK_URL);
 		
 		this.fetchCookieAndToken();
 		this.postForm();
@@ -44,21 +50,20 @@ public class LoginManager {
 		try{
 			String cookieRaw = httpConn.getHeaderField("Set-Cookie");
 			cookie = cookieRaw.split(Pattern.quote(";"))[0];
-			System.out.println(cookie);
+			System.out.printf("Received cookie: %s\n", cookie);
 			
 			String site = readHttpConnection(httpConn);
 			this.extractSecurityTokens(site);
 			
-			System.out.println("Security token:");
-			System.out.println(securityTokenReturn);
-			System.out.println(securityTokenValue);
 		}
-		finally{
+		finally
+		{
 			httpConn.disconnect();	
 		}
 	}
 	
-	private void postForm() throws IOException{
+	private void postForm() throws IOException
+	{
 		Scanner eing = new Scanner(System.in);
 		System.out.print("Username: ");
 		String username = eing.nextLine();
@@ -66,25 +71,30 @@ public class LoginManager {
 		String password = eing.nextLine();
 		eing.close();
 		
-		//String password = passwordInput();
-		
 		HttpURLConnection httpConn = (HttpURLConnection) loginUrl.openConnection();
 		httpConn.setRequestMethod("POST");
 		httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 		httpConn.setRequestProperty("Cookie", cookie);
-		
-		/*List<NameValuePair> params = new ArrayList<NameValuePair>();                                                                                                                                                                         
-        params.add(new BasicNameValuePair("username", username));                                                                                                                                                                            
-        params.add(new BasicNameValuePair("password", password));                                                                                                                                                                            
-        params.add(new BasicNameValuePair("return", "aW5kZXgucGhwP0l0ZW1pZD0xMDE="));                                                                                                                                                        
-        params.add(new BasicNameValuePair("task", "user.login"));*/
+		httpConn.setDoOutput(true);
+
+		//Problem 1: task=user.login has to be part of the URL, its a search query
 		String body = "username=" + URLEncoder.encode(username, "UTF-8")
 				+ "&password=" + URLEncoder.encode(password, "UTF-8")
 				+ "&return=" + URLEncoder.encode(securityTokenReturn, "UTF-8")
-				+ "&" + securityTokenValue + "=" + URLEncoder.encode("1", "UTF-8")
-				+ "&task" + URLEncoder.encode("user.login", "UTF-8");
+				+ "&" + securityTokenValue + "=" + URLEncoder.encode("1", "UTF-8");
 		
-		System.out.println(body);
+		//Problem 2: if we create the body we also have to add it
+		byte[] bodyInBytes = body.getBytes();
+		OutputStream os = httpConn.getOutputStream();
+		os.write(bodyInBytes);
+		
+		System.out.println("Send http request!");
+		
+		String response = NetworkUtils.getResponse(httpConn.getInputStream());
+		System.out.printf("Response:\n%s\n", response);
+		
+		String content = NetworkUtils.getWebPageAsString(PLAN_URL, cookie);
+		System.out.printf("Plan request:\n%s\n", content);
 	}
 	
 	public static String readHttpConnection(HttpURLConnection conn) throws IOException
