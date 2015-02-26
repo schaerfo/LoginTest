@@ -7,6 +7,12 @@ public class Main {
 		try{
 			LoginManager manager = new LoginManager();
 			manager.login();
+			
+			String plan = manager.getPlanHtml();
+			
+			PageParser parse = new PageParser(plan);
+			parse.getAvailableDates(false);
+			//parse
 		}
 		catch(Exception exc){
 			System.err.println("Fehler");

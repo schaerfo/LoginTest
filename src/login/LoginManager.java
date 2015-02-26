@@ -32,6 +32,12 @@ public class LoginManager {
 	private String cookie;
 	private String securityTokenReturn;
 	private String securityTokenValue;
+	
+	private String planHtmlPage;
+	
+	public String getPlanHtml() {
+		return planHtmlPage;
+	}
 
 	public void login() throws Exception
 	{
@@ -43,6 +49,7 @@ public class LoginManager {
 		this.postForm();
 	}
 
+	// TODO Error handling -- throws NullPointerException if not connected to Internet 
 	private void fetchCookieAndToken() throws IOException 
 	{
 		HttpURLConnection httpConn = (HttpURLConnection) loginUrl.openConnection();
@@ -95,6 +102,7 @@ public class LoginManager {
 		
 		String content = NetworkUtils.getWebPageAsString(PLAN_URL, cookie);
 		System.out.printf("Plan request:\n%s\n", content);
+		planHtmlPage = content;
 	}
 	
 	public static String readHttpConnection(HttpURLConnection conn) throws IOException
