@@ -12,7 +12,7 @@ public class Main {
 			
 			PageParser parse = new PageParser(plan);
 			parse.getAvailableDates(false);
-			//parse
+			parse.extractPlanInfo();
 		}
 		catch(Exception exc){
 			System.err.println("Fehler");

@@ -11,8 +11,9 @@ import org.jsoup.nodes.*;
 /**
  * 
  * @author christian
- * Zweck: Parst die http://asgspez.de/index.php/schueler-intern/vertretungsplan.html
- * und extrahiert die Tage der verfügbaren anderen Pläne und den gezeigten als 
+ * 
+ * Purpose: Parses http://asgspez.de/index.php/schueler-intern/vertretungsplan.html
+ * (HTML code to be provided as String) and extracts relevant Information
  */
 public class PageParser {
 	// Gibt es das nicht auch schon anderswo?
@@ -26,11 +27,33 @@ public class PageParser {
 	private Element contentTag;
 	
 	/**
-	 * 
-	 * @param includeCurrentDate Specifies whether to include date currently fetched
-	 * @return 
+	 * Initializes DOM and extracts relevant HTML tags
+	 * @param content HTML code to be processed
 	 */
-	public List<String> getAvailableDates(boolean includeFetchedPlan){
+	public PageParser(String content){
+		htmlContent = content;
+		htmlDoc = Parser.parse(content, PLAN_URL);
+		
+		// The <div id="main" role="main"> tag is closest one to the
+		// relevant <article> tag which has an id
+		Element divIdMain = htmlDoc.body().getElementById("main");
+		contentTag = divIdMain.getElementsByTag("article").first();
+	}
+	
+	public VPlan extractPlanInfo() throws Exception{
+		VPlan ret = new VPlan();
+		ret.date = extractCurrentDate();
+		
+		return ret;
+	}
+
+	/**
+	 * Extracts dates referenced by current page
+	 * @param includeCurrentDate Specifies whether to include date currently fetched
+	 * @return All available dates, each in pattern dd.mm.yyyy
+	 * @throws Exception 
+	 */
+	public List<String> getAvailableDates(boolean includeFetchedPlan) throws Exception{
 		List<String> ret = new ArrayList<String>();
 		
 		// Read all <a ...> Tags except last one
@@ -40,7 +63,7 @@ public class PageParser {
 			String currDate = currTag.ownText();
 			
 			if(!includeFetchedPlan){
-				try {
+				/*try {
 					String textDate = dateToText(currDate);
 					String headline = contentTag.getElementsByTag("h2").get(0).ownText();
 					
@@ -50,23 +73,16 @@ public class PageParser {
 
 				} catch (Exception e) {
 					e.printStackTrace();
-				}
+				}*/
+				String fetchedPlanDate = extractCurrentDate();
+				if (!fetchedPlanDate.equals(currDate))
+					ret.add(currDate);
 			}
 			else
 				ret.add(currDate);
 		}
 		
 		return ret;
-	}
-	
-	public PageParser(String content){
-		htmlContent = content;
-		htmlDoc = Parser.parse(content, PLAN_URL);
-		
-		// Der <div id="main" role="main"> Tag
-		// nächster Verwandter des relevanten <article>-Tag, der eine id hats
-		Element divIdMain = htmlDoc.body().getElementById("main");
-		contentTag = divIdMain.getElementsByTag("article").first();
 	}
 	
 	/**
@@ -97,5 +113,38 @@ public class PageParser {
 		
 		String ret = dateArray[0] + ". " + monthText + " " + dateArray[2];
 		return ret;
+	}
+	
+	/**
+	 * @return Date of current plan as dd.mm.yyyy
+	 * @throws Exception 
+	 */
+	private String extractCurrentDate() throws Exception{
+		String headline = contentTag.getElementsByTag("h2").get(0).ownText();
+		String [] headlineWords = headline.split(Pattern.quote(" "));
+		
+		final int l = headlineWords.length;
+		String day = headlineWords[l-3];
+		String monthText = headlineWords[l-2];
+		
+		String month = "";
+		switch (monthText){
+		case "Januar": month = "01"; break;
+		case "Februar": month = "02"; break;
+		case "März": month = "03"; break;
+		case "April": month = "04"; break;
+		case "Mai": month = "05"; break;
+		case "Juni": month = "06"; break;
+		case "Juli": month = "07"; break;
+		case "August": month = "08"; break;
+		case "September": month = "09"; break;
+		case "Oktober": month = "10"; break;
+		case "November": month = "11"; break;
+		case "Dezember": month = "12"; break;
+		default: throw new Exception("Unbekannter Monat: " + monthText);
+		}
+		
+		String year = headlineWords[l-1];
+		return day + month + "." + year;
 	}
 }

@@ -1,15 +1,40 @@
 package login;
 
-import org.jsoup.nodes.*;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * Storage for single plan, parsing is done by PageParser
+ * @author christian
+ *
+ */
 public class VPlan {
-	private String htmlContent;
-	private String date;
-	private Document htmlDoc;
+	// All members are public since this class
+	// no functionality, it simply stores information
 	
-	//public static final String 
+	// dd.mm.yyyy
+	public String date;
+	// dd.mm.yyyy hh:ii
+	public String lastChange;
 	
-	public VPlan(String content, String date){
-		//htmlDoc = Parser.parse(content, "");
+	public String absentTeachers;
+	public String absentClasses;
+	public String teachersWithChange;
+	public String classesWithChange;
+	
+	public String additionalInfo;
+	public List<Event> entries;
+	
+	/**
+	 * Initialize all member variables
+	 */
+	public VPlan(){
+		date = "";
+		absentClasses = "";
+		absentTeachers = "";
+		teachersWithChange = "";
+		classesWithChange = "";
+		additionalInfo = "";
+		entries = new ArrayList<>();
 	}
 }
