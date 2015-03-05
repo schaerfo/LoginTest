@@ -44,6 +44,61 @@ public class PageParser {
 		VPlan ret = new VPlan();
 		ret.date = extractCurrentDate();
 		
+		Elements strongTags = contentTag.getElementsByTag("strong");
+		for(Element currElem : strongTags){
+			String contentText = currElem.nextSibling().toString();
+			
+			if (currElem.ownText().equals("Abwesende Lehrer:"))
+				ret.absentTeachers = contentText;
+			else if (currElem.ownText().equals("Abwesende Klassen:"))
+				ret.absentClasses = contentText;
+			else if (currElem.ownText().equals("Lehrer mit Änderung:"))
+				ret.teachersWithChange = contentText;
+			else if (currElem.ownText().equals("Klassen mit Änderung:"))
+				ret.classesWithChange = contentText;
+			else if (currElem.ownText().equals("Zusätzliche Informationen:")){
+				
+				// In this section there are <br> tags and text nodes alternating
+				// until a <strong> tag
+				String infoText = "";
+				Node infoElem = currElem.nextSibling();
+				while (true){
+					String currNodeName = infoElem.nodeName();
+					if (currNodeName.equals("#text")){
+						infoText += infoElem.toString() + "\n";
+					}
+					else if (currNodeName.equals("strong")){
+						break;
+					}
+					
+					infoElem = infoElem.nextSibling();
+				}
+				ret.additionalInfo = infoText;
+			}
+		}
+		
+		Element planTable = contentTag.getElementsByTag("table").first();
+		// The first row contains the header and is ignored
+		Element currTableRow = planTable.child(0).child(0);
+		while(true){
+			// Throws NullPointerException after having reached last sibling			
+			try{
+				currTableRow = currTableRow.nextElementSibling();
+				
+				String form = currTableRow.child(0).ownText();
+				String lesson = currTableRow.child(1).ownText();
+				String subject = currTableRow.child(2).ownText();
+				String teacher = currTableRow.child(3).ownText();
+				String room = currTableRow.child(4).ownText();
+				String remark = currTableRow.child(5).ownText();
+				
+				ret.entries.add(new Event(form, lesson, subject, teacher, room, remark));
+			}
+			catch (NullPointerException exc){
+				break;
+			}
+		}
+		
 		return ret;
 	}
 
